@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Bucket Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input, button {
+            padding: 8px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            white-space: pre-wrap;
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Time Bucket Calculator</h1>
+    
+    <div class="form-group">
+        <label for="startTime">Start Time:</label>
+        <input type="datetime-local" id="startTime" required>
+    </div>
+
+    <div class="form-group">
+        <label for="endTime">End Time:</label>
+        <input type="datetime-local" id="endTime" required>
+    </div>
+
+    <div class="form-group">
+        <label for="buckets">Number of Buckets:</label>
+        <input type="number" id="buckets" value="14" min="1" required>
+    </div>
+
+    <button onclick="calculateBuckets()">Calculate Buckets</button>
+
+    <div id="result"></div>
+
+    <script>
+        function computeBuckets(startIso, endIso, buckets = 14) {
+            // 1) Convert ISO strings to millisecond timestamps
+            const startMs = Date.parse(startIso);
+            const endMs = Date.parse(endIso);
+
+            // 2) Validate
+            if (isNaN(startMs) || isNaN(endMs)) {
+                throw new Error(`Invalid date format. Received start="${startIso}", end="${endIso}".`);
+            }
+            if (endMs <= startMs) {
+                throw new Error(`End time must be after start time.`);
+            }
+
+            // 3) Compute total duration and bucket size
+            const totalDurationMs = endMs - startMs;
+            const bucketSizeMs = totalDurationMs / buckets;
+
+            // 4) Generate boundary timestamps
+            const boundaries = [];
+            for (let i = 0; i <= buckets; i++) {
+                const ts = new Date(startMs + bucketSizeMs * i);
+                boundaries.push(ts.toISOString());
+            }
+
+            return boundaries;
+        }
+
+        function calculateBuckets() {
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            const buckets = parseInt(document.getElementById('buckets').value);
+            const resultDiv = document.getElementById('result');
+
+            try {
+                // Convert local datetime-local format to ISO string
+                const startIso = new Date(startTime).toISOString();
+                const endIso = new Date(endTime).toISOString();
+                
+                const boundaries = computeBuckets(startIso, endIso, buckets);
+                resultDiv.innerHTML = JSON.stringify(boundaries, null, 2);
+            } catch (error) {
+                resultDiv.innerHTML = `Error: ${error.message}`;
+            }
+        }
+
+        // Set default dates for demonstration
+        const now = new Date();
+        const tomorrow = new Date(now);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        document.getElementById('startTime').value = now.toISOString().slice(0, 16);
+        document.getElementById('endTime').value = tomorrow.toISOString().slice(0, 16);
+    </script>
+</body>
+</html>
